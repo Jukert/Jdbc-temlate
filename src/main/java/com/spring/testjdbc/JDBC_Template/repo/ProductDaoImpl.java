@@ -3,10 +3,16 @@ package com.spring.testjdbc.JDBC_Template.repo;
 import com.spring.testjdbc.JDBC_Template.common.Product;
 import com.spring.testjdbc.JDBC_Template.dao.ProductDao;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.interceptor.DefaultTransactionAttribute;
 
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
@@ -21,21 +27,34 @@ import java.util.Map;
 public class ProductDaoImpl extends JdbcDaoSupport implements ProductDao {
 
     @Autowired
-    DataSource dataSource;
+    private DataSource dataSource;
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+    @Autowired
+    private PlatformTransactionManager transactionManager;
 
     @PostConstruct
     private void initialize() {
         setDataSource(dataSource);
     }
 
+
     @Override
     public void insert(Product product) {
-        String sql =
-                "INSERT INTO product " +
-                        "(id, name, count) VALUES (?,?,?)";
-        getJdbcTemplate().update(sql, new Object[]{
-                product.getId(), product.getName(), product.getCount()
-        });
+        TransactionDefinition transactionDefinition = new DefaultTransactionAttribute();
+        TransactionStatus status = transactionManager.getTransaction(transactionDefinition);
+        try {
+            String sql =
+                    "INSERT INTO product " +
+                            "(id, name, count) VALUES (?,?,?)";
+            getJdbcTemplate().update(sql, new Object[]{
+                    product.getId(), product.getName(), product.getCount()
+            });
+            transactionManager.commit(status);
+        }catch (DataAccessException e){
+            System.out.println("Error");
+            transactionManager.rollback(status);
+        }
     }
 
     @Override

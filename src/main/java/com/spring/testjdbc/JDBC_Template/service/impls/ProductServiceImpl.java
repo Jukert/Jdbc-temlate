@@ -5,6 +5,7 @@ import com.spring.testjdbc.JDBC_Template.dao.ProductDao;
 import com.spring.testjdbc.JDBC_Template.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -15,6 +16,7 @@ public class ProductServiceImpl implements ProductService {
     private ProductDao productDao;
 
     @Override
+    @Transactional
     public void insert(Product product) {
         productDao.insert(product);
     }
